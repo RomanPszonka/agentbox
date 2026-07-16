@@ -1,0 +1,16 @@
+
+== 0. Build a tiny probe image (registry blocked here; import a host rootfs) ==
+   built agentbox-poc-caps:latest
+
+== 1. A DEFAULT-hardened container (what Docker gives you normally) ==
+   default flags:             CapEff=00000000a80425fb  CAP_SYS_ADMIN=absent   Seccomp=filter(2)  privileged mount=mount:
+
+== 2. The AgentBox box (exact docker.ts flags) ==
+   box flags:                 CapEff=00000000a82435fb  CAP_SYS_ADMIN=PRESENT  Seccomp=OFF(0)     privileged mount=OK
+
+== 3. Result ==
+ISOLATION WEAKENED -- the box holds CAP_SYS_ADMIN, has the seccomp filter
+   disabled, and can perform privileged mount() operations the default container cannot.
+   seccomp=unconfined lets the untrusted agent issue ANY syscall; CAP_SYS_ADMIN + mount()
+   is the entry point for cgroup-v1 release_agent-style host breakouts and broad kernel
+   attack surface. This is a deliberate DinD trade-off but a real regression vs a default box.

