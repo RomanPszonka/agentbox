@@ -58,16 +58,16 @@
     "@daytona/sdk": "^0.196.0",
     "@vercel/sandbox": "^2.0.1",
     "@xterm/headless": "^5.5.0",
-    "better-auth": "^1.6.0",
+    "better-auth": "^1.7.7",
     "commander": "^12.1.0",
     "e2b": "^2.27.1",
     "execa": "^9.5.2",
     "kysely": "^0.29.2",
-    "next": "16.2.7",
+    "next": "16.4.1",
     "pg": "^8.13.1",
     "react": "^19",
     "react-dom": "^19",
-    "smol-toml": "^1.7.0",
+    "smol-toml": "^1.9.0",
     "supports-hyperlinks": "^3.1.0",
     "ws": "^8.21.0",
     "yaml": "^2.6.1"
@@ -100,6 +100,6 @@
     "@types/node": "^22.10.1",
     "tsup": "^8.3.5",
     "typescript": "^5.7.2",
-    "vitest": "^2.1.8"
+    "vitest": "^5.1.0"
   }
 }

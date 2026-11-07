@@ -36,12 +36,12 @@
     "@agentbox/sandbox-core": "workspace:*",
     "@agentbox/sandbox-docker": "workspace:*",
     "execa": "^9.5.2",
-    "smol-toml": "^1.7.0"
+    "smol-toml": "^1.9.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.1",
     "tsup": "^8.3.5",
     "typescript": "^5.7.2",
-    "vitest": "^2.1.8"
+    "vitest": "^5.1.0"
   }
 }
